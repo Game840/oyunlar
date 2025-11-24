@@ -1,1 +1,107 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Oyun Seçim Menüsü</title>
+    <style>
+        html, body {
+            margin: 0;
+            padding: 0;
+            height: 100%;
+            overflow: hidden; 
+        }
+        
+        body {
+            display: flex;
+            justify-content: center; 
+            align-items: center;
+            background-color: #1a1a2e; 
+        }
+
+        div {
+            min-width: 350px; 
+            padding: 40px; 
+            background-color: rgba(255, 255, 255, 0.1); 
+            border-radius: 10px;
+            box-shadow: 0 0 30px rgba(0, 0, 0, 0.7);
+            
+            display: flex;
+            flex-direction: column; 
+            justify-content: center; 
+            align-items: center; 
+        }
+        
+        label {
+            color: #ecf0f1; 
+            font-size: 1.5em;
+            font-weight: bold;
+            margin-bottom: 25px; 
+            text-shadow: 0 0 5px rgba(255, 255, 255, 0.2);
+        }
+        
+        a {
+            padding: 15px 30px; 
+            background-color: #e74c3c; 
+            color: white; 
+            text-decoration: none; 
+            display: inline-block; 
+            border-radius: 10px;
+            transition: background-color 0.3s, transform 0.2s;
+            text-align: center;
+            font-size: 1.1em;
+            font-weight: normal;
+            margin: 10px 0; 
+            width: 100%; 
+        }
+        
+        a.pc-only {
+            background-color: #3498db; 
+        }
+        
+        a:hover {
+            background-color: #c0392b; 
+            transform: scale(1.02); 
+        }
+        a.pc-only:hover {
+            background-color: #2980b9;
+        }
+        .not1{
+            color: red
+        }
+        .yazı1{
+            color: aqua;
+        }
+    </style>
+</head>
+<body>
+    <div>
+        <label>🕹️ Oyun Seçiniz</label>
+        
+        <a href="aim  geliştirme.html" pc-only" onclick="checkDeviceAndNavigate(event)"> Silah Oyunu (Sadece bilgisayar)</a>
+        <a href="Lingo.html">Lingo Oyunu</a>
+        <a href="XOX OYUNU.html">XOX Oyunu</a>
+        <a href="hafıza oyunu.html">Hafıza Kartı Oyunu</a>
+        <a href="yılan oyunu.html" class="pc-only" onclick="checkDeviceAndNavigate(event)">Yılan Oyunu (Sadece bilgisayar)</a> <br>
+        <label class="not1">Not:</label><label class="yazı1">Bu Site Beta Sürümüdür Hatalar Çıkabilir</label>
+    </div>
+
+    <script>
+        function isMobileDevice() {
+            return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+        }
+        function checkDeviceAndNavigate(event) {
+            if (isMobileDevice()) {
+                event.preventDefault(); 
+                
+                alert('Uyarı: Bu Oyun Sadece Bilgisayar Cihazlarında Oynanabilir.');
+                
+                return false; 
+            }
+            
+            return true;
+        }
+    </script>
+</body>
+</html> 
 
