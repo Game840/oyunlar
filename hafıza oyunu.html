@@ -1,0 +1,448 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hafıza Kart Oyunu</title>
+    <style>
+        :root {
+            --card-size: 100px; 
+            --card-font-size: 2em;
+        }
+
+        body {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            margin: 0;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            font-family: Arial, sans-serif;
+            color: white;
+            padding: 10px; 
+        }
+        
+        #gameInfo, .game-board {
+            display: none;
+        }
+
+        body.game-active #gameInfo {
+            display: flex; 
+        }
+
+        body.game-active .game-board {
+            display: grid; 
+        }
+        
+        #gameInfo {
+            justify-content: space-between;
+            width: 100%; 
+            max-width: 500px; 
+            margin: 15px 0;
+            font-size: 20px;
+            font-weight: bold;
+            text-align: center; 
+        }
+
+        #gameInfo > div {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+        
+        .game-board {
+            grid-template-columns: repeat(var(--cols, 4), var(--card-size));
+            grid-template-rows: repeat(var(--rows, 4), var(--card-size));
+            gap: 10px;
+            margin: 20px 0;
+            max-width: calc(6 * var(--card-size) + 5 * 10px); 
+        }
+        
+        .card {
+            width: var(--card-size);
+            height: var(--card-size);
+            background: linear-gradient(45deg, #ff6b6b, #ffa726);
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: var(--card-font-size);
+            cursor: pointer;
+            transform-style: preserve-3d;
+            transition: transform 0.5s;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.3);
+            color: transparent; 
+        }
+        
+        .card.flipped {
+            transform: rotateY(180deg);
+            background: linear-gradient(45deg, #4ecdc4, #44a08d);
+            color: white; 
+        }
+        
+        .card.matched {
+            background: linear-gradient(45deg, #2ecc71, #27ae60);
+            cursor: default;
+            transform: rotateY(180deg) scale(0.95);
+            color: white;
+        }
+        
+        .card-content {
+            backface-visibility: hidden;
+            transform: rotateY(180deg);
+        }
+        
+        .controls {
+            margin-top: 20px;
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+        
+        button {
+            background: #ff6b6b;
+            color: white;
+            border: none;
+            padding: 12px 25px;
+            border-radius: 25px;
+            cursor: pointer;
+            font-size: 16px;
+            margin: 5px; 
+            transition: all 0.3s;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+            min-width: 100px;
+        }
+
+        .controls button {
+             font-size: 1.5em; 
+             padding: 12px 20px;
+             min-width: 60px;
+        }
+        
+        .difficulty button {
+             font-size: 1em; 
+        }
+        
+        button:hover:not(:disabled) {
+            background: #ff5252;
+            transform: translateY(-2px);
+        }
+
+        button:disabled {
+            background: #7f8c8d;
+            cursor: not-allowed;
+        }
+        
+        .win-message {
+            font-size: 1.5em; 
+            text-align: center;
+            color: #f1c40f;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
+            margin-top: 20px;
+            display: none;
+        }
+        
+        .difficulty {
+            margin: 15px 0;
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+        
+        .difficulty button {
+            background: #3498db;
+            margin: 5px;
+        }
+        
+        .difficulty button.active {
+            background: #2980b9;
+            box-shadow: inset 0 2px 4px rgba(0,0,0,0.3);
+        }
+
+        @media screen and (max-width: 450px) {
+            :root {
+                --card-size: 70px; 
+                --card-font-size: 1.2em;
+            }
+            
+            #gameInfo {
+                font-size: 16px;
+                max-width: 320px;
+            }
+
+            .game-board {
+                gap: 7px;
+            }
+
+            .controls button {
+                padding: 10px 15px;
+                font-size: 1.2em;
+                min-width: 50px;
+            }
+
+            .difficulty button {
+                padding: 10px 15px;
+                font-size: 14px;
+                min-width: 80px;
+            }
+        }
+    </style>
+</head>
+<body>
+    
+    <div id="gameInfo">
+        <div title="Hamle Sayısı">👣 <span id="moves">0</span></div>
+        <div title="Eşleşen Çiftler">✅ <span id="pairs">0</span>/<span id="totalPairsDisplay">8</span></div>
+        <div title="Geçen Süre">⏱️ <span id="timer">0</span>s</div>
+    </div>
+    
+    <div class="difficulty">
+        <button onclick="setDifficulty('easy', event)" class="active">4x4</button>
+        <button onclick="setDifficulty('medium', event)">4x5</button>
+        <button onclick="setDifficulty('hard', event)">4x6</button>
+    </div>
+    
+    <div class="game-board" id="gameBoard"></div>
+    
+    <div class="win-message" id="winMessage">🎉</div>
+    
+    <div class="controls">
+        <button onclick="handleStartOrNewGame()" id="startNewGameButton" title="Oyunu Başlat">▶️</button>
+        <button onclick="goToMenu()" id="menuButton" title="Menüye Dön">🏠</button>
+        <button onclick="resetCurrentGame()" id="resetButton" disabled title="Sıfırla">🗑️</button>
+    </div>
+
+    <script>
+        let cards = [];
+        let flippedCards = [];
+        let matchedPairs = 0;
+        let moves = 0;
+        let timer = 0;
+        let timerInterval;
+        let gameStarted = false;
+        let difficulty = 'easy';
+        let matchCheckTimeout = null; 
+        
+        const boardSizes = {
+            'easy': { cols: 4, rows: 4, totalPairs: 8 },
+            'medium': { cols: 5, rows: 4, totalPairs: 10 },
+            'hard': { cols: 6, rows: 4, totalPairs: 12 }
+        };
+        
+        const symbols = ['🐶', '🐱', '🐭', '🐹', '🐰', '🦊', '🐻', '🐼', 
+                         '🐨', '🐯', '🦁', '🐮', '🐷', '🐸', '🐵', '🐔'];
+        
+        
+        function updateHUD(totalPairs) {
+            document.getElementById('moves').textContent = moves;
+            document.getElementById('pairs').textContent = matchedPairs;
+            document.getElementById('timer').textContent = timer;
+            if (totalPairs) {
+                 document.getElementById('totalPairsDisplay').textContent = totalPairs;
+            }
+            updateButtonStates();
+        }
+
+        function updateButtonStates() {
+            const totalPairs = boardSizes[difficulty].totalPairs;
+            const menuButton = document.getElementById('menuButton');
+            const resetButton = document.getElementById('resetButton');
+            
+            // DÜZELTİLDİ: Menü butonu artık her zaman aktif.
+            menuButton.disabled = false; 
+
+            resetButton.disabled = !gameStarted || matchedPairs === totalPairs;
+        }
+        
+        function showMenuState() {
+            clearInterval(timerInterval);
+            cards = [];
+            flippedCards = [];
+            matchedPairs = 0;
+            moves = 0;
+            timer = 0;
+            gameStarted = false;
+
+            document.body.classList.remove('game-active');
+            document.getElementById('gameBoard').innerHTML = '';
+            document.getElementById('winMessage').style.display = 'none';
+
+            updateHUD(boardSizes[difficulty].totalPairs);
+            
+            const startButton = document.getElementById('startNewGameButton');
+            startButton.innerHTML = '▶️';
+            startButton.title = 'Oyunu Başlat';
+        }
+        
+        function startGameInstance() {
+            cards = [];
+            flippedCards = [];
+            matchedPairs = 0;
+            moves = 0;
+            timer = 0;
+            
+            gameStarted = true;
+            document.body.classList.add('game-active');
+
+            const startButton = document.getElementById('startNewGameButton');
+            startButton.innerHTML = '🔄';
+            startButton.title = 'Yeni Oyun';
+
+            document.getElementById('winMessage').style.display = 'none';
+            
+            createCards();
+            shuffleCards();
+            renderBoard();
+            startTimer();
+            updateHUD(boardSizes[difficulty].totalPairs);
+        }
+
+        function handleStartOrNewGame() {
+            if (!gameStarted) {
+                startGameInstance();
+            } else {
+                resetCurrentGame(); 
+            }
+        }
+        
+        function setDifficulty(level, event) {
+            difficulty = level;
+            
+            document.querySelectorAll('.difficulty button').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            event.target.classList.add('active');
+            
+            showMenuState();
+        }
+        
+        function createCards() {
+            cards = [];
+            const totalPairs = boardSizes[difficulty].totalPairs;
+            
+            const selectedSymbols = symbols.slice(0, totalPairs);
+            
+            for (let symbol of selectedSymbols) {
+                cards.push({ symbol, matched: false });
+                cards.push({ symbol, matched: false });
+            }
+        }
+        
+        function shuffleCards() {
+            for (let i = cards.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [cards[i], cards[j]] = [cards[j], cards[i]];
+            }
+        }
+        
+        function renderBoard() {
+            const gameBoard = document.getElementById('gameBoard');
+            const size = boardSizes[difficulty];
+            
+            gameBoard.style.gridTemplateColumns = `repeat(${size.cols}, var(--card-size))`;
+            gameBoard.style.gridTemplateRows = `repeat(${size.rows}, var(--card-size))`;
+            
+            gameBoard.innerHTML = '';
+            
+            cards.forEach((card, index) => {
+                const cardElement = document.createElement('div');
+                cardElement.className = 'card';
+                if (card.matched) {
+                    cardElement.classList.add('matched');
+                }
+                
+                cardElement.innerHTML = `<div class="card-content">${card.symbol}</div>`;
+                
+                cardElement.addEventListener('click', () => flipCard(index));
+                gameBoard.appendChild(cardElement);
+            });
+        }
+        
+        function flipCard(index) {
+            if (!gameStarted) return;
+            
+            const card = cards[index];
+            const cardElement = document.querySelectorAll('.card')[index];
+            
+            if (card.matched || flippedCards.includes(index) || flippedCards.length >= 2) {
+                return;
+            }
+            
+            cardElement.classList.add('flipped');
+            flippedCards.push(index);
+            
+            if (flippedCards.length === 2) {
+                moves++;
+                matchCheckTimeout = setTimeout(checkMatch, 800);
+            }
+
+            updateHUD();
+        }
+        
+        function checkMatch() {
+            const [firstIndex, secondIndex] = flippedCards;
+            const firstCard = cards[firstIndex];
+            const secondCard = cards[secondIndex];
+
+            matchCheckTimeout = null;
+            
+            if (firstCard.symbol === secondCard.symbol) {
+                cards[firstIndex].matched = true;
+                cards[secondIndex].matched = true;
+                
+                document.querySelectorAll('.card')[firstIndex].classList.add('matched');
+                document.querySelectorAll('.card')[secondIndex].classList.add('matched');
+                
+                matchedPairs++;
+                
+                if (matchedPairs === cards.length / 2) {
+                    endGame();
+                }
+            } else {
+                document.querySelectorAll('.card')[firstIndex].classList.remove('flipped');
+                document.querySelectorAll('.card')[secondIndex].classList.remove('flipped');
+            }
+            
+            flippedCards = [];
+            updateHUD();
+        }
+
+        function goToMenu() {
+            clearInterval(timerInterval);
+            window.location.href = 'index.html'; 
+        }
+
+        function resetCurrentGame() {
+            if (!gameStarted) return;
+            clearInterval(timerInterval);
+            startGameInstance();
+        }
+        
+        function startTimer() {
+            timer = 0;
+            if (timerInterval) clearInterval(timerInterval);
+            
+            timerInterval = setInterval(() => {
+                timer++;
+                document.getElementById('timer').textContent = timer;
+            }, 1000);
+            updateButtonStates();
+        }
+        
+        function endGame() {
+            clearInterval(timerInterval);
+            gameStarted = false;
+            
+            document.getElementById('winMessage').innerHTML = 
+                `🎉 ${moves} hamle, ${timer} saniye! 🎉`;
+
+            document.getElementById('winMessage').style.display = 'block';
+            
+            updateButtonStates();
+        }
+        
+        window.onload = showMenuState;
+    </script>
+</body>
+</html>

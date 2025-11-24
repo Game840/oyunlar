@@ -1,0 +1,269 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Yılan Oyunu</title>
+    <style>
+        body {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            margin: 0;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            font-family: Arial, sans-serif;
+            color: white;
+        }
+        
+        h1 {
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
+        }
+        
+        #gameCanvas {
+            border: 3px solid #fff;
+            border-radius: 10px;
+            box-shadow: 0 0 20px rgba(0,0,0,0.3);
+        }
+        
+        #score {
+            font-size: 24px;
+            margin: 15px 0;
+            font-weight: bold;
+        }
+        
+        .controls {
+            background: rgba(255,255,255,0.2);
+            padding: 15px;
+            border-radius: 10px;
+            margin-top: 15px;
+            text-align: center;
+        }
+        
+        button {
+            background: #ff6b6b;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            margin: 5px;
+            transition: background 0.3s;
+        }
+        
+        button:hover {
+            background: #ff5252;
+        }
+
+        #backToMainMenu {
+            background: #00b894;
+            margin-top: 10px;
+        }
+
+        #backToMainMenu:hover {
+            background: #00a085;
+        }
+    </style>
+</head>
+<body>
+    <h1>🐍 Yılan Oyunu 🍎</h1>
+    <div id="score">Skor: 0</div>
+    <canvas id="gameCanvas" width="400" height="400"></canvas>
+    
+    <div class="controls">
+        <p>🕹️ Kontroller: Yön tuşları veya WASD</p>
+        <button onclick="startGame()">Yeni Oyun</button>
+        <button onclick="pauseGame()">Duraklat/Devam</button>
+        <button id="backToMainMenu" onclick="backToMainMenu()">Ana Menüye Dön</button>
+    </div>
+
+    <script>
+        // Oyun değişkenleri
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+        const scoreElement = document.getElementById('score');
+        
+        let snake = [];
+        let food = {};
+        let direction = 'right';
+        let gameSpeed = 100;
+        let score = 0;
+        let gameInterval;
+        let isPaused = false;
+        
+        // Ana menüye dön
+        function backToMainMenu() {
+            // Oyunu durdur
+            if (gameInterval) {
+                clearInterval(gameInterval);
+            }
+            // index.html sayfasına yönlendir
+            window.location.href = 'index.html';
+        }
+        
+        // Oyunu başlat
+        function startGame() {
+            // Reset değişkenler
+            snake = [
+                {x: 160, y: 200},
+                {x: 140, y: 200},
+                {x: 120, y: 200}
+            ];
+            direction = 'right';
+            score = 0;
+            gameSpeed = 100;
+            isPaused = false;
+            
+            scoreElement.textContent = `Skor: ${score}`;
+            generateFood();
+            
+            // Önceki interval'i temizle
+            if (gameInterval) clearInterval(gameInterval);
+            
+            // Yeni interval başlat
+            gameInterval = setInterval(gameLoop, gameSpeed);
+        }
+        
+        // Yiyecek oluştur
+        function generateFood() {
+            food = {
+                x: Math.floor(Math.random() * 20) * 20,
+                y: Math.floor(Math.random() * 20) * 20
+            };
+            
+            // Yiyecek yılanın üzerinde oluşmasın
+            for (let segment of snake) {
+                if (segment.x === food.x && segment.y === food.y) {
+                    generateFood();
+                    break;
+                }
+            }
+        }
+        
+        // Oyun döngüsü
+        function gameLoop() {
+            if (isPaused) return;
+            
+            moveSnake();
+            checkCollision();
+            drawGame();
+        }
+        
+        // Yılanı hareket ettir
+        function moveSnake() {
+            const head = {...snake[0]};
+            
+            switch(direction) {
+                case 'up': head.y -= 20; break;
+                case 'down': head.y += 20; break;
+                case 'left': head.x -= 20; break;
+                case 'right': head.x += 20; break;
+            }
+            
+            snake.unshift(head);
+            
+            // Yiyecek yendi mi?
+            if (head.x === food.x && head.y === food.y) {
+                score += 10;
+                scoreElement.textContent = `Skor: ${score}`;
+                generateFood();
+                
+                // Her 50 puanda hızlan
+                if (score % 50 === 0) {
+                    gameSpeed = Math.max(50, gameSpeed - 10);
+                    clearInterval(gameInterval);
+                    gameInterval = setInterval(gameLoop, gameSpeed);
+                }
+            } else {
+                snake.pop();
+            }
+        }
+        
+        // Çarpışma kontrolü
+        function checkCollision() {
+            const head = snake[0];
+            
+            // Duvar çarpışması
+            if (head.x < 0 || head.x >= canvas.width || head.y < 0 || head.y >= canvas.height) {
+                gameOver();
+                return;
+            }
+            
+            // Kendine çarpma
+            for (let i = 1; i < snake.length; i++) {
+                if (head.x === snake[i].x && head.y === snake[i].y) {
+                    gameOver();
+                    return;
+                }
+            }
+        }
+        
+        // Oyunu çiz
+        function drawGame() {
+            // Arkaplan
+            ctx.fillStyle = '#2d3436';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            
+            // Yılan
+            snake.forEach((segment, index) => {
+                ctx.fillStyle = index === 0 ? '#00b894' : '#00cec9'; // Baş farklı renk
+                ctx.fillRect(segment.x, segment.y, 18, 18);
+                ctx.strokeStyle = '#0984e3';
+                ctx.strokeRect(segment.x, segment.y, 18, 18);
+            });
+            
+            // Yiyecek
+            ctx.fillStyle = '#ff7675';
+            ctx.beginPath();
+            ctx.arc(food.x + 10, food.y + 10, 8, 0, 2 * Math.PI);
+            ctx.fill();
+        }
+        
+        // Oyun bitti
+        function gameOver() {
+            clearInterval(gameInterval);
+            alert(`Oyun Bitti! Skorunuz: ${score}\nTekrar oynamak için "Yeni Oyun" butonuna tıklayın.`);
+        }
+        
+        // Oyunu duraklat/devam ettir
+        function pauseGame() {
+            isPaused = !isPaused;
+        }
+        
+        // Klavye kontrolleri
+        document.addEventListener('keydown', (event) => {
+            switch(event.key) {
+                case 'ArrowUp':
+                case 'w':
+                case 'W':
+                    if (direction !== 'down') direction = 'up';
+                    break;
+                case 'ArrowDown':
+                case 's':
+                case 'S':
+                    if (direction !== 'up') direction = 'down';
+                    break;
+                case 'ArrowLeft':
+                case 'a':
+                case 'A':
+                    if (direction !== 'right') direction = 'left';
+                    break;
+                case 'ArrowRight':
+                case 'd':
+                case 'D':
+                    if (direction !== 'left') direction = 'right';
+                    break;
+                case ' ':
+                    pauseGame();
+                    break;
+            }
+        });
+        
+        // Sayfa yüklendiğinde oyunu başlat
+        window.onload = startGame;
+    </script>
+</body>
+</html>

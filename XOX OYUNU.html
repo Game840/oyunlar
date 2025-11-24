@@ -1,0 +1,496 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>XOX Oyunu - 2 Kişilik</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        body {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            background: linear-gradient(135deg, #6a11cb 0%, #2575fc 100%);
+            padding: 20px;
+        }
+        
+        .container {
+            background-color: rgba(255, 255, 255, 0.9);
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+            padding: 30px;
+            max-width: 500px;
+            width: 100%;
+            text-align: center;
+            transition: all 0.3s ease;
+        }
+        
+        h1 {
+            color: #333;
+            margin-bottom: 20px;
+            font-size: 2.5rem;
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.1);
+        }
+        
+        /* OYUN BAŞLANGIÇ/AKTİF GÖRÜNÜM KONTROLÜ */
+        /* Varsayılan olarak oyunun ana elemanlarını gizle */
+        .game-info, .game-board, .message, .score-board, #reset-board-btn {
+            display: none;
+        }
+
+        /* container'da game-active class'ı varsa göster */
+        .container.game-active .game-info,
+        .container.game-active .message,
+        .container.game-active .score-board {
+            display: flex;
+        }
+        .container.game-active .game-board {
+            display: grid;
+        }
+        .container.game-active #reset-board-btn {
+            display: flex; /* Buton olduğu için esnekliği korur */
+        }
+        .container.game-active .start-message {
+            display: none;
+        }
+
+        .start-message {
+            font-size: 1.2rem;
+            font-weight: 500;
+            color: #555;
+            margin: 30px 0;
+        }
+
+        /* OYUN BİLGİ ALANI */
+        .game-info {
+            justify-content: space-between;
+            margin-bottom: 20px;
+            background-color: #f5f5f5;
+            padding: 15px;
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+        
+        .player {
+            font-size: 1.2rem;
+            font-weight: bold;
+            padding: 10px 20px;
+            border-radius: 8px;
+            transition: all 0.3s ease;
+        }
+        
+        .player.active {
+            background-color: #4CAF50;
+            color: white;
+            transform: scale(1.05);
+        }
+        
+        .player-x {
+            color: #2196F3;
+        }
+        
+        .player-o {
+            color: #FF5722;
+        }
+        
+        /* OYUN TAHTASI */
+        .game-board {
+            grid-template-columns: repeat(3, 1fr);
+            grid-gap: 10px;
+            margin: 20px auto;
+            max-width: 300px;
+        }
+        
+        .cell {
+            background-color: #f0f0f0;
+            border: none;
+            border-radius: 10px;
+            font-size: 3rem;
+            font-weight: bold;
+            height: 100px;
+            width: 100px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+        
+        .cell:hover {
+            background-color: #e0e0e0;
+            transform: translateY(-2px);
+        }
+        
+        .cell.x {
+            color: #2196F3;
+        }
+        
+        .cell.o {
+            color: #FF5722;
+        }
+        
+        .cell.win {
+            background-color: #4CAF50;
+            color: white;
+        }
+        
+        .message {
+            font-size: 1.5rem;
+            font-weight: bold;
+            margin: 20px 0;
+            padding: 15px;
+            border-radius: 10px;
+            background-color: #f5f5f5;
+            min-height: 60px;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        /* KONTROLLER */
+        .controls {
+            display: flex;
+            justify-content: center;
+            gap: 10px; /* Boşluğu azaltıldı */
+            margin-top: 20px;
+            flex-wrap: wrap; /* Mobil için sarma ekledim */
+        }
+        
+        button {
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            padding: 12px 20px;
+            font-size: 1rem;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            min-width: 130px; /* Butonların genişliği ayarlandı */
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 5px;
+        }
+        
+        button:hover:not(:disabled) {
+            background-color: #45a049;
+            transform: translateY(-2px);
+        }
+
+        button:active {
+            transform: translateY(0);
+        }
+        
+        #reset-board-btn {
+            background-color: #FF5722;
+        }
+        
+        #reset-board-btn:hover:not(:disabled) {
+            background-color: #e64a19;
+        }
+
+        button:disabled {
+            background-color: #95a5a6;
+            cursor: not-allowed;
+        }
+
+        #menu-btn {
+            background-color: #2c3e50;
+        }
+
+        #menu-btn:hover:not(:disabled) {
+            background-color: #34495e;
+        }
+        
+        /* SKOR ALANI */
+        .score-board {
+            justify-content: space-around;
+            margin-top: 20px;
+            background-color: #f5f5f5;
+            padding: 15px;
+            border-radius: 10px;
+        }
+        
+        .score {
+            font-size: 1.2rem;
+            font-weight: bold;
+        }
+        
+        .score-x {
+            color: #2196F3;
+        }
+        
+        .score-o {
+            color: #FF5722;
+        }
+        
+        /* MOBİL UYUMLULUK */
+        @media (max-width: 480px) {
+            .container {
+                padding: 15px;
+            }
+            
+            h1 {
+                font-size: 2rem;
+            }
+            
+            .cell {
+                height: 80px;
+                width: 80px;
+                font-size: 2.5rem;
+            }
+
+            .controls button {
+                padding: 10px 15px;
+                font-size: 0.9rem;
+                min-width: 100px;
+            }
+
+            .game-info, .message, .score-board {
+                font-size: 0.9rem;
+                padding: 10px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>XOX Oyunu</h1>
+        
+        <p class="start-message" id="start-message">Başlamak için alttaki tuşa basın.</p>
+
+        <div class="game-info" id="game-info">
+            <div class="player player-x active">X Oyuncusu</div>
+            <div class="player player-o">O Oyuncusu</div>
+        </div>
+        
+        <div class="game-board" id="game-board">
+            <div class="cell" data-index="0"></div>
+            <div class="cell" data-index="1"></div>
+            <div class="cell" data-index="2"></div>
+            <div class="cell" data-index="3"></div>
+            <div class="cell" data-index="4"></div>
+            <div class="cell" data-index="5"></div>
+            <div class="cell" data-index="6"></div>
+            <div class="cell" data-index="7"></div>
+            <div class="cell" data-index="8"></div>
+        </div>
+        
+        <div class="message" id="message">X Oyuncusunun Sırası</div>
+        
+        <div class="score-board" id="score-board">
+            <div class="score score-x">X: <span id="score-x">0</span></div>
+            <div class="score score-o">O: <span id="score-o">0</span></div>
+        </div>
+        
+        <div class="controls">
+            <button id="reset-board-btn" disabled title="Tahtayı sıfırla, skorları koru">🗑️ Sıfırla</button>
+            <button id="start-new-game-btn">▶️ Başlat</button>
+            <button id="menu-btn" title="Ana Menüye Dön (index.html)">🏠 Menü</button>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            let gameState = {
+                board: ['', '', '', '', '', '', '', '', ''],
+                currentPlayer: 'X',
+                gameActive: false,
+                scores: {
+                    X: 0,
+                    O: 0
+                }
+            };
+
+            const container = document.querySelector('.container');
+            const cells = document.querySelectorAll('.cell');
+            const messageElement = document.getElementById('message');
+            const resetBoardButton = document.getElementById('reset-board-btn');
+            const startNewGameButton = document.getElementById('start-new-game-btn');
+            const menuButton = document.getElementById('menu-btn');
+            const playerXElement = document.querySelector('.player-x');
+            const playerOElement = document.querySelector('.player-o');
+            const scoreXElement = document.getElementById('score-x');
+            const scoreOElement = document.getElementById('score-o');
+            
+            // Kazanma kombinasyonları
+            const winningConditions = [
+                [0, 1, 2], [3, 4, 5], [6, 7, 8],
+                [0, 3, 6], [1, 4, 7], [2, 5, 8],
+                [0, 4, 8], [2, 4, 6]
+            ];
+
+            // --- YENİ EKLENEN VEYA DEĞİŞTİRİLEN FONKSİYONLAR ---
+
+            function updateButtonStates() {
+                // SIFIRLA butonu sadece oyun aktifken veya bitince pasif olmalı.
+                resetBoardButton.disabled = !gameState.gameActive;
+
+                // MENÜ butonu her zaman aktif (Düzeltildi)
+                menuButton.disabled = false;
+
+                // Start/Yeni Tur butonu içeriğini güncelle
+                startNewGameButton.innerHTML = gameState.gameActive ? '🔄 Yeni Tur' : '▶️ Başlat';
+                startNewGameButton.title = gameState.gameActive ? 'Yeni Tur Başlat (Skorları Koru)' : 'Oyunu Başlat';
+            }
+
+            function showMenuState() {
+                gameState.gameActive = false;
+                container.classList.remove('game-active');
+                
+                // İlk açılışta skorları güncelle
+                updateScores(); 
+                updateButtonStates();
+            }
+
+            function startGameInstance() {
+                gameState.gameActive = true;
+                container.classList.add('game-active');
+                
+                // Tahtayı ve değişkenleri sıfırla (Skorlar korunur)
+                resetBoard(); 
+                updateButtonStates();
+            }
+
+            function handleStartOrNewGame() {
+                startGameInstance();
+            }
+
+            function goToMenu() {
+                // Ana menü dosyasına yönlendir
+                window.location.href = 'index.html'; 
+            }
+
+            // --- ESKİ FONKSİYONLARIN GÜNCELLENMİŞ VERSİYONLARI ---
+
+            function resetBoard() {
+                gameState.board = ['', '', '', '', '', '', '', '', ''];
+                gameState.currentPlayer = 'X';
+                gameState.gameActive = true;
+                
+                cells.forEach(cell => {
+                    cell.textContent = '';
+                    cell.classList.remove('x', 'o', 'win');
+                });
+                
+                playerXElement.classList.add('active');
+                playerOElement.classList.remove('active');
+                updateMessage();
+            }
+            
+            // Oyun içi sıfırlama (Yeniden başlat butonu gibi)
+            function resetCurrentGame() {
+                if (!gameState.gameActive) return;
+                startGameInstance();
+            }
+            
+            // ... (Kalan oyun mantığı)
+
+            // Hücre tıklama işleyicisi
+            function handleCellClick(event) {
+                const clickedCell = event.target;
+                const cellIndex = parseInt(clickedCell.getAttribute('data-index'));
+
+                if (gameState.board[cellIndex] !== '' || !gameState.gameActive) {
+                    return;
+                }
+
+                gameState.board[cellIndex] = gameState.currentPlayer;
+                clickedCell.textContent = gameState.currentPlayer;
+                clickedCell.classList.add(gameState.currentPlayer.toLowerCase());
+
+                if (checkWin()) {
+                    endGame(false);
+                } else if (isDraw()) {
+                    endGame(true);
+                } else {
+                    swapPlayer();
+                    updateMessage();
+                }
+            }
+
+            // Kazanma kontrolü
+            function checkWin() {
+                for (let i = 0; i < winningConditions.length; i++) {
+                    const [a, b, c] = winningConditions[i];
+                    if (gameState.board[a] && 
+                        gameState.board[a] === gameState.board[b] && 
+                        gameState.board[a] === gameState.board[c]) {
+                        
+                        cells[a].classList.add('win');
+                        cells[b].classList.add('win');
+                        cells[c].classList.add('win');
+                        
+                        return true;
+                    }
+                }
+                return false;
+            }
+
+            // Beraberlik kontrolü
+            function isDraw() {
+                return !gameState.board.includes('');
+            }
+
+            // Oyun sonu
+            function endGame(isDraw) {
+                gameState.gameActive = false;
+                
+                if (isDraw) {
+                    messageElement.textContent = 'Berabere! 🤝';
+                } else {
+                    messageElement.textContent = `${gameState.currentPlayer} Kazandı! 🎉`;
+                    gameState.scores[gameState.currentPlayer]++;
+                    updateScores();
+                }
+                updateButtonStates();
+            }
+
+            // Oyuncu değiştir
+            function swapPlayer() {
+                gameState.currentPlayer = gameState.currentPlayer === 'X' ? 'O' : 'X';
+                
+                if (gameState.currentPlayer === 'X') {
+                    playerXElement.classList.add('active');
+                    playerOElement.classList.remove('active');
+                } else {
+                    playerOElement.classList.add('active');
+                    playerXElement.classList.remove('active');
+                }
+            }
+
+            // Mesajı güncelle
+            function updateMessage() {
+                messageElement.textContent = `${gameState.currentPlayer} Oyuncusunun Sırası`;
+            }
+
+            // Skorları güncelle
+            function updateScores() {
+                scoreXElement.textContent = gameState.scores.X;
+                scoreOElement.textContent = gameState.scores.O;
+            }
+
+            // --- OLAY DİNLEYİCİLERİ ---
+            cells.forEach(cell => {
+                cell.addEventListener('click', handleCellClick);
+            });
+
+            resetBoardButton.addEventListener('click', resetCurrentGame);
+            startNewGameButton.addEventListener('click', handleStartOrNewGame);
+            menuButton.addEventListener('click', goToMenu);
+
+            // Başlangıç durumunu ayarla
+            showMenuState();
+        });
+    </script>
+</body>
+</html>

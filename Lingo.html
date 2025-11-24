@@ -1,0 +1,645 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lingo - Kelime Oyunu</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        body {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            background: linear-gradient(135deg, #1a2a6c, #b21f1f, #fdbb2d);
+            padding: 20px;
+        }
+        
+        .container {
+            background-color: rgba(255, 255, 255, 0.95);
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+            padding: 30px;
+            max-width: 600px;
+            width: 100%;
+            text-align: center;
+        }
+        
+        h1 {
+            color: #1a2a6c;
+            margin-bottom: 10px;
+            font-size: 2.5rem;
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.1);
+        }
+        
+        .subtitle {
+            color: #b21f1f;
+            margin-bottom: 25px;
+            font-size: 1.2rem;
+        }
+        
+        /* Genel Buton ve Link Stili */
+        button, .menu-link { 
+            background-color: #1a2a6c;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            padding: 14px 25px;
+            font-size: 1rem;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            margin: 5px;
+            text-decoration: none;
+            display: inline-block;
+            text-align: center;
+        }
+        
+        button:hover, .menu-link:hover { 
+            background-color: #253a99;
+            transform: translateY(-2px);
+        }
+        
+        button:active, .menu-link:active { 
+            transform: translateY(0);
+        }
+        
+        button:disabled {
+            background-color: #cccccc;
+            cursor: not-allowed;
+            transform: none;
+        }
+        
+        /* Özel Buton Renkleri */
+        #hint-btn {
+            background-color: #fdbb2d;
+            color: #333;
+        }
+        
+        #hint-btn:hover {
+            background-color: #ffcc44;
+        }
+
+        /* Oyun ekranındaki Ana Menü linki */
+        #back-to-menu-link {
+            background-color: #b21f1f;
+        }
+        
+        #back-to-menu-link:hover {
+            background-color: #d13030;
+        }
+
+        /* Lingo başlangıç ekranındaki Ana Menü linki */
+        #back-to-selection-link {
+            background-color: #757575;
+        }
+        #back-to-selection-link:hover {
+            background-color: #888888;
+        }
+
+        /* Oyun İçin Diğer Stiller... */
+        .game-info {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 20px;
+            background-color: #f5f5f5;
+            padding: 15px;
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+        
+        .info-item {
+            font-size: 1.1rem;
+            font-weight: bold;
+        }
+        
+        .game-board {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            margin: 20px auto;
+            max-width: 350px;
+        }
+        
+        .row {
+            display: flex;
+            justify-content: center;
+            gap: 8px;
+        }
+        
+        .cell {
+            background-color: #f0f0f0;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            font-size: 1.8rem;
+            font-weight: bold;
+            height: 60px;
+            width: 60px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            text-transform: uppercase;
+            transition: all 0.3s ease;
+        }
+        
+        .cell.correct { background-color: #4CAF50; color: white; border-color: #4CAF50; }
+        .cell.present { background-color: #FFC107; color: white; border-color: #FFC107; }
+        .cell.absent { background-color: #757575; color: white; border-color: #757575; }
+        
+        .input-area { margin: 25px 0; }
+        
+        #word-input {
+            font-size: 1.5rem;
+            padding: 12px;
+            width: 200px;
+            text-align: center;
+            border: 2px solid #1a2a6c;
+            border-radius: 8px;
+            text-transform: uppercase;
+            margin-right: 10px;
+            letter-spacing: 2px;
+        }
+        
+        .message {
+            font-size: 1.3rem;
+            font-weight: bold;
+            margin: 20px 0;
+            padding: 15px;
+            border-radius: 10px;
+            background-color: #f5f5f5;
+            min-height: 60px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .success { background-color: #4CAF50; color: white; }
+        .error { background-color: #f44336; color: white; }
+        
+        .controls {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            margin-top: 20px;
+            flex-wrap: wrap; 
+        }
+        
+        .keyboard {
+            margin-top: 25px;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            align-items: center;
+        }
+        
+        .keyboard-row { display: flex; gap: 5px; }
+        
+        .key {
+            background-color: #e0e0e0;
+            border-radius: 5px;
+            font-size: 1.2rem;
+            font-weight: bold;
+            height: 50px;
+            width: 40px;
+        }
+        
+        .key.wide { width: 65px; font-size: 0.9rem; }
+        .key.correct { background-color: #4CAF50; color: white; }
+        .key.present { background-color: #FFC107; color: white; }
+        .key.absent { background-color: #757575; color: white; }
+        
+        .instructions {
+            background-color: #f9f9f9;
+            padding: 15px;
+            border-radius: 10px;
+            margin-top: 25px;
+            text-align: left;
+        }
+
+        /* Telefon Uyumluluğu (Responsiveness) - Var olan kodunuz korundu */
+        @media (max-width: 480px) {
+            .container { padding: 15px; }
+            h1 { font-size: 2rem; }
+            .cell { height: 45px; width: 45px; font-size: 1.4rem; }
+            #word-input { width: 130px; font-size: 1.1rem; padding: 10px; }
+            .input-area button { padding: 10px 15px; }
+            .key { height: 38px; width: 30px; font-size: 0.9rem; }
+            .key.wide { width: 50px; font-size: 0.8rem; }
+            
+            /* Kontrol tuşları alt alta sıralandı */
+            .controls {
+                flex-direction: column; 
+                gap: 8px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container" id="main-container">
+
+        <div id="lingo-start-screen" style="display: block;">
+            <h1>LİNGO</h1>
+            <div class="subtitle">Kelime Bulmaca Oyunu</div>
+            
+            <div class="instructions" style="margin-top: 30px;">
+                <h3>Nasıl Oynanır?</h3>
+                <ul>
+                    <li>5 harfli gizli bir kelimeyi tahmin etmeye çalışın</li>
+                    <li><span style="color: #4CAF50;">Yeşil</span>: Harf doğru ve doğru yerde</li>
+                    <li><span style="color: #FFC107;">Sarı</span>: Harf doğru ama yanlış yerde</li>
+                    <li><span style="color: #757575;">Gri</span>: Harf kelimede yok</li>
+                    <li>6 hakkınız ve 2 ipucunuz var</li>
+                </ul>
+            </div>
+            
+            <div class="controls">
+                <button id="start-btn" style="padding: 15px 35px; font-size: 1.2rem;">OYUNA BAŞLA</button>
+                
+                <a href="index.html" class="menu-link" id="back-to-selection-link" style="padding: 15px 35px; font-size: 1.2rem;">Ana Menüye Dön</a>
+            </div>
+        </div>
+        
+        <div id="game-screen" style="display: none;">
+            
+            <h1>LİNGO</h1>
+            <div class="subtitle">Kelime Bulmaca Oyunu</div>
+
+            <div class="game-info">
+                <div class="info-item">Kalan Hak: <span id="remaining-attempts">6</span></div>
+                <div class="info-item">Harf İpucu: <span id="hint-count">2</span></div>
+            </div>
+            
+            <div class="game-board" id="game-board">
+                </div>
+            
+            <div class="input-area">
+                <input type="text" id="word-input" maxlength="5" placeholder="Kelime gir">
+                <button id="submit-btn">Tahmin Et</button>
+            </div>
+            
+            <div class="message" id="message">5 harfli bir kelime girin</div>
+            
+            <div class="keyboard">
+                <div class="keyboard-row">
+                    <div class="key" data-key="E">E</div>
+                    <div class="key" data-key="R">R</div>
+                    <div class="key" data-key="T">T</div>
+                    <div class="key" data-key="Y">Y</div>
+                    <div class="key" data-key="U">U</div>
+                    <div class="key" data-key="I">I</div>
+                    <div class="key" data-key="O">O</div>
+                    <div class="key" data-key="P">P</div>
+                    <div class="key" data-key="Ğ">Ğ</div>
+                    <div class="key" data-key="Ü">Ü</div>
+                </div>
+                <div class="keyboard-row">
+                    <div class="key" data-key="A">A</div>
+                    <div class="key" data-key="S">S</div>
+                    <div class="key" data-key="D">D</div>
+                    <div class="key" data-key="F">F</div>
+                    <div class="key" data-key="G">G</div>
+                    <div class="key" data-key="H">H</div>
+                    <div class="key" data-key="J">J</div>
+                    <div class="key" data-key="K">K</div>
+                    <div class="key" data-key="L">L</div>
+                    <div class="key" data-key="Ş">Ş</div>
+                    <div class="key" data-key="İ">İ</div>
+                </div>
+                <div class="keyboard-row">
+                    <div class="key wide" data-key="Backspace">Sil</div>
+                    <div class="key" data-key="Z">Z</div>
+                    <div class="key" data-key="C">C</div>
+                    <div class="key" data-key="V">V</div>
+                    <div class="key" data-key="B">B</div>
+                    <div class="key" data-key="N">N</div>
+                    <div class="key" data-key="M">M</div>
+                    <div class="key" data-key="Ö">Ö</div>
+                    <div class="key" data-key="Ç">Ç</div>
+                    <div class="key wide" data-key="Enter">Enter</div>
+                </div>
+            </div>
+
+            <div class="controls">
+                <button id="hint-btn">İpucu Al</button>
+                <button id="new-game-btn">Yeni Oyun</button>
+                
+                <a href="index.html" class="menu-link" id="back-to-menu-link">Ana Menüye Dön</a>
+            </div>
+            
+        </div>
+
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            
+            const wordList = [
+                "AKREP", "BALIK", "CEVİZ", "DENİZ", "ELMAS", 
+                "FİLİZ", "GÜNEŞ", "HALAT", "İNCİR", "JETON",
+                "KALEM", "LİMON", "MASAJ", "NARİN", "ORGAN",
+                "PAPAZ", "RÜYA", "SABUN", "TARAK", "MANAV",
+                "VİRAJ", "YASTIK", "ZEYTİN", "ÇANAK", "ÖRDEK",
+                "MELEK", "KADER", "KUMAR", "EKLER","FENER","BEŞİK","KİTAP"
+            ];
+            
+            
+            const gameState = {
+                targetWord: "",
+                currentRow: 0,
+                remainingAttempts: 6,
+                hintCount: 2,
+                gameActive: false, 
+                guessedLetters: {
+                    correct: [], present: [], absent: []
+                }
+            };
+            
+            // DOM elementleri
+            const gameBoard = document.getElementById('game-board');
+            const wordInput = document.getElementById('word-input');
+            const submitButton = document.getElementById('submit-btn');
+            const hintButton = document.getElementById('hint-btn');
+            const newGameButton = document.getElementById('new-game-btn');
+            const messageElement = document.getElementById('message');
+            const remainingAttemptsElement = document.getElementById('remaining-attempts');
+            const hintCountElement = document.getElementById('hint-count');
+            const keyboardKeys = document.querySelectorAll('.key');
+            
+            // Ekran Elementleri
+            const lingoStartScreen = document.getElementById('lingo-start-screen');     
+            const gameScreen = document.getElementById('game-screen');                 
+
+            // Buton Elementleri
+            const startButton = document.getElementById('start-btn');                  
+            
+            
+            // --- EKRAN YÖNETİMİ FONKSİYONLARI ---
+
+            function hideAllScreens() {
+                lingoStartScreen.style.display = 'none';
+                gameScreen.style.display = 'none';
+            }
+
+            // Lingo Talimat Ekranını göster
+            function showLingoStartScreen() {
+                hideAllScreens();
+                lingoStartScreen.style.display = 'block';
+                gameState.gameActive = false;
+            }
+
+            // Lingo Oyununu Başlat
+            function startGame() {
+                hideAllScreens();
+                gameScreen.style.display = 'block';
+                initGame();
+            }
+
+            // --- LİNGO OYUN MANTIĞI ---
+
+            function createGameBoard() {
+                gameBoard.innerHTML = '';
+                for (let row = 0; row < 6; row++) {
+                    const rowElement = document.createElement('div');
+                    rowElement.className = 'row';
+                    for (let col = 0; col < 5; col++) {
+                        const cell = document.createElement('div');
+                        cell.className = 'cell';
+                        cell.id = `cell-${row}-${col}`;
+                        rowElement.appendChild(cell);
+                    }
+                    gameBoard.appendChild(rowElement);
+                }
+            }
+            
+            function initGame() {
+                gameState.targetWord = wordList[Math.floor(Math.random() * wordList.length)];
+                gameState.currentRow = 0;
+                gameState.remainingAttempts = 6;
+                gameState.hintCount = 2;
+                gameState.gameActive = true;
+                gameState.guessedLetters = {
+                    correct: [], present: [], absent: []
+                };
+                
+                createGameBoard();
+                
+                wordInput.value = '';
+                wordInput.disabled = false;
+                submitButton.disabled = false;
+                hintButton.disabled = false;
+                
+                messageElement.textContent = '5 harfli bir kelime girin';
+                messageElement.className = 'message';
+                
+                remainingAttemptsElement.textContent = gameState.remainingAttempts;
+                hintCountElement.textContent = gameState.hintCount;
+                
+                keyboardKeys.forEach(key => {
+                    key.className = 'key';
+                    if (key.dataset.key === 'Enter' || key.dataset.key === 'Backspace') {
+                        key.className += ' wide';
+                    }
+                });
+                
+                wordInput.focus();
+            }
+            
+            function submitGuess() {
+                if (!gameState.gameActive) return;
+                
+                const guess = wordInput.value.toUpperCase().trim();
+                
+                if (guess.length !== 5) {
+                    showMessage('Lütfen 5 harfli bir kelime girin!', 'error');
+                    return;
+                }
+                
+                if (!wordList.includes(guess) && !/^[A-ZÇĞİÖŞÜ]+$/.test(guess)) {
+                    showMessage('Geçerli bir kelime girin!', 'error');
+                    return;
+                }
+                
+                processGuess(guess);
+                wordInput.value = '';
+            }
+
+            function processGuess(guess) {
+                for (let i = 0; i < 5; i++) {
+                    const cell = document.getElementById(`cell-${gameState.currentRow}-${i}`);
+                    cell.textContent = guess[i];
+                    cell.classList.add('filled');
+                    
+                    setTimeout(() => {
+                        let status;
+                        if (guess[i] === gameState.targetWord[i]) {
+                            status = 'correct';
+                            cell.classList.add('correct');
+                        } else if (gameState.targetWord.includes(guess[i])) {
+                            status = 'present';
+                            cell.classList.add('present');
+                        } else {
+                            status = 'absent';
+                            cell.classList.add('absent');
+                        }
+                        
+                        updateKeyboardKey(guess[i], status);
+                        
+                        // Güncellenmiş Harf Bilgilerini Kaydet
+                        if (status === 'correct' && !gameState.guessedLetters.correct.includes(guess[i])) {
+                            gameState.guessedLetters.correct.push(guess[i]);
+                        } else if (status === 'present' && !gameState.guessedLetters.correct.includes(guess[i]) && !gameState.guessedLetters.present.includes(guess[i])) {
+                            gameState.guessedLetters.present.push(guess[i]);
+                        } else if (status === 'absent' && !gameState.guessedLetters.correct.includes(guess[i]) && !gameState.guessedLetters.present.includes(guess[i]) && !gameState.guessedLetters.absent.includes(guess[i])) {
+                            gameState.guessedLetters.absent.push(guess[i]);
+                        }
+                        
+                    }, i * 200);
+                }
+                
+                if (guess === gameState.targetWord) {
+                    setTimeout(() => {
+                        gameState.gameActive = false;
+                        showMessage(`Tebrikler! Kelimeyi buldunuz: ${gameState.targetWord}`, 'success');
+                        wordInput.disabled = true;
+                        submitButton.disabled = true;
+                        hintButton.disabled = true;
+                    }, 1200);
+                } else {
+                    gameState.currentRow++;
+                    gameState.remainingAttempts--;
+                    remainingAttemptsElement.textContent = gameState.remainingAttempts;
+                    
+                    if (gameState.remainingAttempts === 0) {
+                        setTimeout(() => {
+                            gameState.gameActive = false;
+                            showMessage(`Maalesef bilemediniz. Kelime: ${gameState.targetWord}`, 'error');
+                            wordInput.disabled = true;
+                            submitButton.disabled = true;
+                            hintButton.disabled = true;
+                        }, 1200);
+                    } else {
+                        showMessage(`${gameState.remainingAttempts} hakkınız kaldı`, 'message');
+                    }
+                }
+            }
+
+            function updateKeyboardKey(letter, status) {
+                keyboardKeys.forEach(key => {
+                    if (key.dataset.key === letter) {
+                        if (status === 'correct' || 
+                            (status === 'present' && !key.classList.contains('correct')) ||
+                            (status === 'absent' && !key.classList.contains('correct') && !key.classList.contains('present'))) {
+                            key.className = 'key';
+                            key.classList.add(status);
+                            if (key.dataset.key === 'Enter' || key.dataset.key === 'Backspace') {
+                                key.classList.add('wide');
+                            }
+                        }
+                    }
+                });
+            }
+
+            function giveHint() {
+                if (gameState.hintCount <= 0 || !gameState.gameActive) {
+                    showMessage('İpucu hakkınız kalmadı!', 'error');
+                    return;
+                }
+                
+                let unknownIndexes = [];
+                for (let i = 0; i < 5; i++) {
+                    const cell = document.getElementById(`cell-${gameState.currentRow}-${i}`);
+                    if (!cell.textContent) {
+                        unknownIndexes.push(i);
+                    }
+                }
+                
+                if (unknownIndexes.length === 0) {
+                    showMessage('Bu satır zaten dolu!', 'error');
+                    return;
+                }
+                
+                const randomIndex = unknownIndexes[Math.floor(Math.random() * unknownIndexes.length)];
+                const hintLetter = gameState.targetWord[randomIndex];
+                
+                const cell = document.getElementById(`cell-${gameState.currentRow}-${randomIndex}`);
+                cell.textContent = hintLetter;
+                cell.classList.add('filled', 'correct');
+                
+                updateKeyboardKey(hintLetter, 'correct');
+                if (!gameState.guessedLetters.correct.includes(hintLetter)) {
+                    gameState.guessedLetters.correct.push(hintLetter);
+                }
+                
+                gameState.hintCount--;
+                hintCountElement.textContent = gameState.hintCount;
+                
+                showMessage(`İpucu: ${randomIndex + 1}. harf "${hintLetter}"`, 'success');
+                
+                if (gameState.hintCount === 0) {
+                    hintButton.disabled = true;
+                }
+
+                wordInput.focus();
+            }
+
+            function showMessage(text, type) {
+                messageElement.textContent = text;
+                messageElement.className = 'message';
+                if (type) {
+                    messageElement.classList.add(type);
+                }
+            }
+            
+            // --- OLAY DİNLEYİCİLERİ ---
+            
+            // Lingo Başlangıç Ekranı Tuşları
+            startButton.addEventListener('click', startGame); 
+            
+            // Lingo Oyun Ekranı Tuşları
+            submitButton.addEventListener('click', submitGuess);
+            hintButton.addEventListener('click', giveHint);
+            newGameButton.addEventListener('click', initGame);
+
+            // Klavye ve Giriş Olayları
+            keyboardKeys.forEach(key => {
+                key.addEventListener('click', () => {
+                    if (!gameState.gameActive || wordInput.disabled) return;
+                    
+                    const keyValue = key.dataset.key;
+                    
+                    if (keyValue === 'Enter') {
+                        submitGuess();
+                    } else if (keyValue === 'Backspace') {
+                        wordInput.value = wordInput.value.slice(0, -1);
+                    } else {
+                        if (wordInput.value.length < 5) {
+                            wordInput.value += keyValue;
+                        }
+                    }
+                    wordInput.focus();
+                });
+            });
+            
+            wordInput.addEventListener('keyup', (e) => {
+                if (e.key === 'Enter') {
+                    submitGuess();
+                }
+            });
+            
+            wordInput.addEventListener('input', () => {
+                wordInput.value = wordInput.value.toUpperCase().replace(/[^A-ZÇĞİÖŞÜ]/g, '');
+                if (wordInput.value.length > 5) {
+                    wordInput.value = wordInput.value.slice(0, 5);
+                }
+            });
+        });
+    </script>
+</body>
+</html>
